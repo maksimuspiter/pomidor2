@@ -11,12 +11,11 @@ from store.permissions import IsOwnerOrStuffOrReadOnly
 from store.serializer import BookSerializer, UserBookRelationSerializer
 
 
-
 class BookViewSet(ModelViewSet):
     queryset = Book.objects.all().annotate(
-            annotated_likes=Count(Case(When(userbookrelation__like=True, then=1))),
-            rating=Avg('userbookrelation__rate')
-        ).order_by('id')
+        annotated_likes=Count(Case(When(userbookrelation__like=True, then=1))),
+        rating=Avg('userbookrelation__rate')
+    ).select_related('owner').prefetch_related('readers').order_by('id')
     serializer_class = BookSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     permission_classes = [IsOwnerOrStuffOrReadOnly]
@@ -31,7 +30,7 @@ class BookViewSet(ModelViewSet):
 
 
 class UserBookRelationView(UpdateModelMixin, GenericViewSet):
-# class UserBookRelationView(ModelViewSet):
+    # class UserBookRelationView(ModelViewSet):
 
     queryset = UserBookRelation.objects.all()
 
@@ -41,7 +40,7 @@ class UserBookRelationView(UpdateModelMixin, GenericViewSet):
 
     def get_object(self):
         obj, _ = UserBookRelation.objects.get_or_create(user=self.request.user,
-                                                              book_id=self.kwargs['book'])
+                                                        book_id=self.kwargs['book'])
         return obj
 
 
